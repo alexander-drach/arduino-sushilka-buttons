@@ -22,6 +22,7 @@ int count = 0;                        // значение счетчика
 int temp;
 int cooler;
 int time = 0;
+int countdownTime = time * 60; // время обратного отсчета в секундах
 boolean play = false;
 boolean pressBtnLevel = false;
 
@@ -77,15 +78,15 @@ void loop() {
   float t = dht.readTemperature();  
 
   if (!digitalRead(2)) {              // LOW
-    //stopProgrammOnBtn();
+    pressBtnLevel = true;
     str = "LOW        ";
-    temp = 0;
+    temp = 5;
     cooler = 80;
     setSettingsProgram(str);
   } 
   
   if (!digitalRead(3)) {              // MIDDLE
-    //stopProgrammOnBtn();
+    pressBtnLevel = true;
     str = "MIDDLE   ";
     temp = 40;
     cooler = 170;
@@ -93,18 +94,18 @@ void loop() {
   }
   
   if (!digitalRead(4)) {              // HIGH
-    //stopProgrammOnBtn();
+    pressBtnLevel = true;
     str = "HIGH     ";
     temp = 60;
     cooler = 255;
     setSettingsProgram(str);
   }
 
-  if (!digitalRead(9)) {
+  if (!digitalRead(9)) {             // увеличиваем время
     setTimePlus();    
   }
 
-  if (!digitalRead(10)) {
+  if (!digitalRead(10)) {            // уменьшаем время
     setTimeMinus();    
   }
 
@@ -113,13 +114,15 @@ void loop() {
   }
 
   if (!digitalRead(12)) {            // остановка программы
-    stopProgramm(str); 
+    stopProgramm(str);
   }
 
   outPutTempHum(t, h);
 
   if (play) {
     checkTemp(t, temp);
+  } else {
+    
   }
 }
 
@@ -137,7 +140,7 @@ void outPutTempHum(float t, float h) {
 
 void setTimePlus() {
   time = time + 5;
-  delay(500);
+  delay(300);
 
   if (time > 60) {
     time = 60;
@@ -149,7 +152,7 @@ void setTimePlus() {
 
 void setTimeMinus() {
   time = time - 5;
-  delay(500);
+  delay(300);
 
   if (time < 10) {
     time = 10;
@@ -160,39 +163,27 @@ void setTimeMinus() {
 }
 
 void startProgram() {
-  play = true;
-  heating();
-  startTimer();
-  analogWrite(5, cooler);
+  if (temp > 0 && pressBtnLevel && time > 0) {
+    play = true;
+    heating();
+    startTimer();
+    analogWrite(5, cooler);
+  }  
 }
 
 void stopProgramm(String str) {
   play = false;
   cooling();
   time = 0;
+  countdownTime = 0;
   temp = 0;
   cooler = 0;
   lcd.setCursor(6, 1);              // Устанавливаем курсор в начало 2 строкe, 6 символ
   lcd.print(time);
-  //Serial.println(str);
-  //analogWrite(5, 255);            // включаем вентилятор на полную мощность перед выключением на 1 мин
-  //delay(60000);  
   analogWrite(5, 0);                // выключаем вентилятор
   buzOn();
   lcd.setCursor(9, 0);              // Устанавливаем курсор в начало 1 строкe, 10 символ
   lcd.print("Set level");           // Выводим дефолтное название программы - Set level
-}
-
-void stopProgrammOnBtn() {
-  play = false;
-  time = 0;
-  temp = 0;
-  cooler = 0;
-  analogWrite(5, 0);                // выключаем вентилятор
-  lcd.setCursor(9, 0);              // Устанавливаем курсор в начало 1 строкe, 10 символ
-  lcd.print("Stop");                // Выводим дефолтное надпись - Stop
-  delay(500);
-  buzOn();
 }
 
 void startTimer() {
@@ -210,7 +201,9 @@ void buzOn() {                      // вывод звукового сигна�
 }
 
 void heating() {                    // нагрев тены
-  digitalWrite(6, HIGH);
+  if (temp > 0 && pressBtnLevel && play && time > 0) {
+    digitalWrite(6, HIGH);
+  }  
 }
 
 void cooling() {                    // выключение тены
