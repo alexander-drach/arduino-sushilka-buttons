@@ -77,41 +77,43 @@ void loop() {
   // Read temperature as Celsius
   float t = dht.readTemperature();  
 
-  if (!digitalRead(2)) {              // LOW
-    pressBtnLevel = true;
-    str = "LOW        ";
-    temp = 5;
-    cooler = 80;
-    setSettingsProgram(str);
-  } 
-  
-  if (!digitalRead(3)) {              // MIDDLE
-    pressBtnLevel = true;
-    str = "MIDDLE   ";
-    temp = 40;
-    cooler = 170;
-    setSettingsProgram(str);
-  }
-  
-  if (!digitalRead(4)) {              // HIGH
-    pressBtnLevel = true;
-    str = "HIGH     ";
-    temp = 60;
-    cooler = 255;
-    setSettingsProgram(str);
-  }
+  if (!play) {
+    if (!digitalRead(2)) {              // LOW
+      pressBtnLevel = true;
+      str = "LOW        ";
+      temp = 5;
+      cooler = 80;
+      setSettingsProgram(str);
+    } 
+    
+    if (!digitalRead(3)) {              // MIDDLE
+      pressBtnLevel = true;
+      str = "MIDDLE   ";
+      temp = 40;
+      cooler = 170;
+      setSettingsProgram(str);
+    }
+    
+    if (!digitalRead(4)) {              // HIGH
+      pressBtnLevel = true;
+      str = "HIGH     ";
+      temp = 60;
+      cooler = 255;
+      setSettingsProgram(str);
+    }
 
-  if (!digitalRead(9)) {             // увеличиваем время
-    setTimePlus();    
-  }
+    if (!digitalRead(9)) {             // увеличиваем время
+      setTimePlus();    
+    }
 
-  if (!digitalRead(10)) {            // уменьшаем время
-    setTimeMinus();    
-  }
+    if (!digitalRead(10)) {            // уменьшаем время
+      setTimeMinus();    
+    }
 
-  if (!digitalRead(11)) {            // запуск программы
-    startProgram();    
-  }
+    if (!digitalRead(11)) {            // запуск программы
+      startProgram();    
+    }
+  }  
 
   if (!digitalRead(12)) {            // остановка программы
     stopProgramm(str);
