@@ -22,6 +22,7 @@ int count = 0;                        // значение счетчика
 int temp;
 int cooler;
 int time = 0;
+int timeInSec = 0;
 int countdownTime = time * 60; // время обратного отсчета в секундах
 boolean play = false;
 boolean pressBtnLevel = false;
@@ -41,8 +42,18 @@ byte degree[8] =                      // кодируем символ град�
  
 LiquidCrystal_I2C lcd(0x27, 20, 4);   // Задаем адрес и размерность дисплея
 
+unsigned long startTime = 0;
+unsigned long currentTime = 0;
+unsigned long elapsedTime = 0;
+unsigned long lastPrintTime = 0;
+unsigned long countdownDuration = 5 * 60 * 1000; // 5 минут в миллисекундах
+char lcdLine[20];
+
 void setup() {
   Serial.begin(9600);
+
+  startTime = millis();
+  lastPrintTime = startTime;
 
   dht.begin();
 
@@ -62,20 +73,34 @@ void setup() {
   lcd.setCursor(9, 0);                // Устанавливаем курсор в начало 1 строкe, 10 символ
   lcd.print("Set level");             // Выводим дефолтное название программы - Set level
 
-  lcd.setCursor(0, 1);                // Устанавливаем курсор в начало 2 строкe, 0 символ
-  lcd.print("Time: ");                // Выводим дефолтное название программы - LOW
-  lcd.setCursor(6, 1);                // Устанавливаем курсор в начало 2 строкe, 6 символ
-  lcd.print(time);
-  lcd.setCursor(9, 1);                // Устанавливаем курсор в начало 2 строкe, 8 символ
-  lcd.print("min");
+  outPutTime(0);
+}
+
+int getDeltaTimeInSec() {
+  int currentTime = millis();
+  int previous = startTime;
+  int delta = currentTime - previous;
+  if (delta >= 1000) {
+    startTime = currentTime;
+    return delta / 1000;
+  }
+
+  return 0;
 }
 
 void loop() {
+
   // Считывание данных температуры занимает около 250 milliseconds!
   // Показания датчика также могут быть "устаревшими" на 2 секунды (это очень медленный датчик)
   float h = dht.readHumidity();
   // Read temperature as Celsius
-  float t = dht.readTemperature();  
+  float t = dht.readTemperature();
+
+  if (isnan(h) || isnan(t)) {  // Проверяем, успешно ли прошло считывание данных
+    outPutError();
+    stopProgramm(str);
+    buzOnLong();    
+  }
 
   if (!play) {
     if (!digitalRead(2)) {              // LOW
@@ -103,17 +128,19 @@ void loop() {
     }
 
     if (!digitalRead(9)) {             // увеличиваем время
-      setTimePlus();    
+      setTimePlus();
+      outPutTime(time*60);
     }
 
     if (!digitalRead(10)) {            // уменьшаем время
-      setTimeMinus();    
+      setTimeMinus();
+      outPutTime(time*60); 
     }
 
     if (!digitalRead(11)) {            // запуск программы
       startProgram();    
     }
-  }  
+  }
 
   if (!digitalRead(12)) {            // остановка программы
     stopProgramm(str);
@@ -123,9 +150,28 @@ void loop() {
 
   if (play) {
     checkTemp(t, temp);
-  } else {
-    
+
+    timeInSec -= getDeltaTimeInSec();
+    outPutTime(timeInSec);
+    if (timeInSec <= 0) {
+      stopProgramm(str);
+    }
+  } else {    
   }
+}
+
+void outPutTime(int secs) {
+  sprintf(lcdLine, "Time: %02d min %02d sec", secs/60, secs % 60);
+  lcd.setCursor(0, 1);
+  lcd.print(lcdLine);
+}
+
+void outPutError() {
+  sprintf(lcdLine, "Error   ");
+  lcd.setCursor(7, 2);
+  lcd.print(lcdLine);
+  lcd.setCursor(7, 3);
+  lcd.print(lcdLine);
 }
 
 void setSettingsProgram(String str) {
@@ -134,6 +180,11 @@ void setSettingsProgram(String str) {
 }
 
 void outPutTempHum(float t, float h) {
+  // lcd.setCursor(0, 2);                // Устанавливаем курсор в начало 2 строки
+  // lcd.print("Temp =     \1C ");       // Выводим текст, \1 - значок градуса
+  // lcd.setCursor(0, 3);                // Устанавливаем курсор в начало 4 строки
+  // lcd.print("Hum  =      % ");        // Выводим текст
+
   lcd.setCursor(7, 2);               // Устанавливаем курсор в начало 3 строкe, 8 символ
   lcd.print(t,1);                    // Выводим значение температуры
   lcd.setCursor(7, 3);               // Устанавливаем курсор в начало 4 строкe, 8 символ
@@ -144,12 +195,9 @@ void setTimePlus() {
   time = time + 5;
   delay(300);
 
-  if (time > 60) {
-    time = 60;
+  if (time > 300) {
+    time = 300;
   }
-
-  lcd.setCursor(6, 1);               // прибавляем время
-  lcd.print(time);
 }
 
 void setTimeMinus() {
@@ -157,15 +205,13 @@ void setTimeMinus() {
   delay(300);
 
   if (time < 10) {
-    time = 10;
+    time = 0;
   }
-
-  lcd.setCursor(6, 1);              // уменьшаем время
-  lcd.print(time);
 }
 
 void startProgram() {
   if (temp > 0 && pressBtnLevel && time > 0) {
+    timeInSec = time * 60;
     play = true;
     heating();
     startTimer();
@@ -186,6 +232,7 @@ void stopProgramm(String str) {
   buzOn();
   lcd.setCursor(9, 0);              // Устанавливаем курсор в начало 1 строкe, 10 символ
   lcd.print("Set level");           // Выводим дефолтное название программы - Set level
+  outPutTime(0);
 }
 
 void startTimer() {
@@ -195,6 +242,15 @@ void startTimer() {
 
 void buzOn() {                      // вывод звукового сигнала
   for (int i=0; i<3; i++){
+      digitalWrite(Buz, HIGH); 
+      delay(600);
+      digitalWrite(Buz, LOW);
+      delay(400);
+  }
+}
+
+void buzOnLong() {                      // вывод звукового сигнала
+  for (int i=0; i < 15; i++){
       digitalWrite(Buz, HIGH); 
       delay(600);
       digitalWrite(Buz, LOW);
@@ -216,7 +272,7 @@ void checkTemp(int t, int temp) {   // проверка температуры �
   if (t >= temp) {
     cooling();
   }
-  if (t <= (temp - 4)) {
+  if (t <= (temp - 2)) {
     heating();
   }
 }
