@@ -161,9 +161,16 @@ void loop() {
 }
 
 void outPutTime(int secs) {
-  sprintf(lcdLine, "Time: %02d min %02d sec", secs/60, secs % 60);
+  sprintf(lcdLine, "Time: %02d:%02d", secs/3600, ((secs % 3600) / 60));
   lcd.setCursor(0, 1);
   lcd.print(lcdLine);
+}
+
+void outPutEndTime() {
+  sprintf(lcdLine, "Time: END      ");
+  lcd.setCursor(0, 1);
+  lcd.print(lcdLine);
+  return;
 }
 
 void outPutError() {
@@ -180,11 +187,6 @@ void setSettingsProgram(String str) {
 }
 
 void outPutTempHum(float t, float h) {
-  // lcd.setCursor(0, 2);                // Устанавливаем курсор в начало 2 строки
-  // lcd.print("Temp =     \1C ");       // Выводим текст, \1 - значок градуса
-  // lcd.setCursor(0, 3);                // Устанавливаем курсор в начало 4 строки
-  // lcd.print("Hum  =      % ");        // Выводим текст
-
   lcd.setCursor(7, 2);               // Устанавливаем курсор в начало 3 строкe, 8 символ
   lcd.print(t,1);                    // Выводим значение температуры
   lcd.setCursor(7, 3);               // Устанавливаем курсор в начало 4 строкe, 8 символ
@@ -192,7 +194,7 @@ void outPutTempHum(float t, float h) {
 }
 
 void setTimePlus() {
-  time = time + 5;
+  time = time + 10;
   delay(300);
 
   if (time > 300) {
@@ -201,7 +203,7 @@ void setTimePlus() {
 }
 
 void setTimeMinus() {
-  time = time - 5;
+  time = time - 10;
   delay(300);
 
   if (time < 10) {
@@ -232,7 +234,7 @@ void stopProgramm(String str) {
   buzOn();
   lcd.setCursor(9, 0);              // Устанавливаем курсор в начало 1 строкe, 10 символ
   lcd.print("Set level");           // Выводим дефолтное название программы - Set level
-  outPutTime(0);
+  outPutEndTime();
 }
 
 void startTimer() {
