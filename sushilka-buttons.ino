@@ -108,6 +108,8 @@ void loop() {
       str = "LOW        ";
       temp = 5;
       cooler = 80;
+      time = 300;
+      outPutTime(time*60);
       setSettingsProgram(str);
     } 
     
@@ -116,6 +118,8 @@ void loop() {
       str = "MIDDLE   ";
       temp = 40;
       cooler = 170;
+      time = 180;
+      outPutTime(time*60);
       setSettingsProgram(str);
     }
     
@@ -124,6 +128,8 @@ void loop() {
       str = "HIGH     ";
       temp = 60;
       cooler = 255;
+      time = 90;
+      outPutTime(time*60);
       setSettingsProgram(str);
     }
 
